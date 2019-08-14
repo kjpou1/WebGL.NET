@@ -135,13 +135,9 @@ namespace Samples
                 fullscreenCanvasName = canvasName;
                 fullscreenDivCanvasName = divCanvasName;
 
-                using (var document = (JSObject)Runtime.GetGlobalObject("document"))
-                using (var div = (JSObject)document.Invoke("getElementById", divCanvasName))
-                {
-                    div.Invoke("requestFullscreen");
-                }
+                var div = (JSObject)((JSObject)Runtime.GetGlobalObject("document")).Invoke("getElementById", divCanvasName);
+                div.Invoke("requestFullscreen");
 
-                o.Dispose();
             }));
         }
 

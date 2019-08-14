@@ -38,11 +38,17 @@ namespace Samples
             return Task.CompletedTask;
         }
 
+        // Make these instance variables so they will not get collected.
+        Action<JSObject> clickAction;
+        Action<JSObject> lockChangeAlert;
+        Action<JSObject> mouseMove;
+
         public void Run()
         {
             ctx = (JSObject)currentCanvas.Invoke("getContext", "2d");
 
-            currentCanvas.Invoke("addEventListener", "click", new Action<JSObject>((o) => {
+            clickAction = new Action<JSObject>((o) =>
+            {
                 using (var document = (JSObject)Runtime.GetGlobalObject("document"))
                 {
                     var canvasName = $"canvas_{this.GetType().Name}";
@@ -61,10 +67,12 @@ namespace Samples
                     }
                 }
 
-                o.Dispose();
-            }), false);
+                //o.Dispose();
+            });
 
-            var lockChangeAlert = new Action<JSObject>((o) => {
+            currentCanvas.Invoke("addEventListener", "click", clickAction, false);
+
+            lockChangeAlert = new Action<JSObject>((o) => {
 
                 using (var document = (JSObject)Runtime.GetGlobalObject("document"))
                 {
@@ -82,47 +90,55 @@ namespace Samples
                     }
                 }
 
-                o.Dispose();
+                //o.Dispose();
             });
 
             using (var document = (JSObject)Runtime.GetGlobalObject("document"))
             {
+
                 document.Invoke("addEventListener", "pointerlockchange", lockChangeAlert, false);
                 document.Invoke("addEventListener", "mozpointerlockchange", lockChangeAlert, false);
 
-                document.Invoke("addEventListener", "mousemove", new Action<JSObject>((mEvent) => {
-
-                    var mX = (int)mEvent.GetObjectProperty("movementX");
-                    var mY = (int)mEvent.GetObjectProperty("movementY");
-
-                    mEvent.Dispose();
-
-                    if (!listenToMouseEvent)
+                mouseMove = new Action<JSObject>((mEvent) =>
+                {
+                    // This is not needed as it will be automatically collected during
+                    // normal GC but we will dispose of the mEvent to keep the number of
+                    // objects to a minimum as a new one is created on each move.
+                    using (mEvent)
                     {
-                        return;
+                        var mX = (int)mEvent.GetObjectProperty("movementX");
+                        var mY = (int)mEvent.GetObjectProperty("movementY");
+
+                        //mEvent.Dispose();
+                        //Console.WriteLine($"Listen to mouse event {listenToMouseEvent} {mX} / {mY}");
+                        if (!listenToMouseEvent)
+                        {
+                            return;
+                        }
+
+                        x += mX;
+                        y += mY;
+
+                        if (x > canvasWidth + RADIUS)
+                        {
+                            x = -RADIUS;
+                        }
+                        if (y > canvasHeight + RADIUS)
+                        {
+                            y = -RADIUS;
+                        }
+                        if (x < -RADIUS)
+                        {
+                            x = canvasWidth + RADIUS;
+                        }
+                        if (y < -RADIUS)
+                        {
+                            y = canvasHeight + RADIUS;
+                        }
                     }
 
-                    x += mX;
-                    y += mY;
-
-                    if (x > canvasWidth + RADIUS)
-                    {
-                        x = -RADIUS;
-                    }
-                    if (y > canvasHeight + RADIUS)
-                    {
-                        y = -RADIUS;
-                    }
-                    if (x < -RADIUS)
-                    {
-                        x = canvasWidth + RADIUS;
-                    }
-                    if (y < -RADIUS)
-                    {
-                        y = canvasHeight + RADIUS;
-                    }
-
-                }), false);
+                });
+                document.Invoke("addEventListener", "mousemove", mouseMove, false);
             }
         }
 

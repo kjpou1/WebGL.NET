@@ -46,11 +46,7 @@ namespace Samples
                     WebGLRenderingContextBase.UNSIGNED_BYTE,
                     image);
 
-                loadEvent.Dispose();
-                Runtime.FreeObject(onLoad);
-
                 image.SetObjectProperty("onload", null);
-                image.Dispose();
             });
             image.SetObjectProperty("onload", onLoad);
             image.SetObjectProperty("src", AssetPath);

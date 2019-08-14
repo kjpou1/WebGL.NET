@@ -137,6 +137,8 @@ namespace WebGLDotNET
             return exists;
         }
 
+        // The disposing of the arrays are no longer needed but does release the arrays sooner
+        // commenting this out will probably speed things up.
         private void DisposeArrayTypes(object[] args)
         {
             for (int i = 0; i < args.Length; i++)
@@ -161,7 +163,8 @@ namespace WebGLDotNET
         {
             var actualArgs = Translate(args);
             var result = gl.Invoke(method, actualArgs);
-            DisposeArrayTypes(actualArgs);
+            // See comment above about DisposeArrayTypes.
+            //DisposeArrayTypes(actualArgs);
 
             if (IsVerbosityEnabled)
             {
@@ -220,19 +223,15 @@ namespace WebGLDotNET
 
         protected T[] InvokeForArray<T>(string method, params object[] args)
         {
-            using (var rawResult = (WebAssembly.Core.Array)Invoke(method, args))
-            {
-                return rawResult.ToArray(item => (T)item);
-            }
+            var rawResult = (WebAssembly.Core.Array)Invoke(method, args);
+            return rawResult.ToArray(item => (T)item);
         }
 
         protected T[] InvokeForJavaScriptArray<T>(string method, params object[] args)
             where T : JSHandler, new()
         {
-            using (var rawResult = (WebAssembly.Core.Array)Invoke(method, args))
-            {
-                return rawResult.ToArray(item => new T { Handle = (JSObject)item });
-            }
+            var rawResult = (WebAssembly.Core.Array)Invoke(method, args);
+            return rawResult.ToArray(item => new T { Handle = (JSObject)item });
         }
 
         protected T InvokeForBasicType<T>(string method, params object[] args)

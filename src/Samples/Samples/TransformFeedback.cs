@@ -35,6 +35,9 @@ namespace Samples
             "Points from vertex shader output are swapped between buffers. " +
             "Then we unbind it and swap buffers for the next draw.";
 
+        // use instance field so that the delegate does not get collectiond
+        Action<JSObject> clickEvent;
+
         public Task InitAsync(JSObject canvas, Vector4 clearColor)
         {
             this.clearColor = clearColor;
@@ -44,11 +47,12 @@ namespace Samples
             canvasHeight = (int)canvas.GetObjectProperty("height");
 
             HtmlHelper.AddButton(ButtonId, "Next");
-            HtmlHelper.AttachButtonOnClickEvent(ButtonId, new Action<JSObject>(clickEvent =>
+            clickEvent = new Action<JSObject>(clickEvent =>
             {
                 shouldDraw = true;
-                clickEvent.Dispose();
-            }));
+            });
+
+            HtmlHelper.AttachButtonOnClickEvent(ButtonId, clickEvent);
 
             return Task.CompletedTask;
         }

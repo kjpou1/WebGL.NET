@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using WebAssembly;
 
 namespace WebGLDotNET
@@ -66,12 +67,15 @@ namespace WebGLDotNET
             }
         }
 
+        // Make sure we keep the onClick events around so they are not GC'd
+        static Dictionary<string, Action<JSObject>> OnClickEvents = new Dictionary<string, Action<JSObject>>();
         public static void AttachButtonOnClickEvent(string id, Action<JSObject> onClickAction)
         {
-            using (var document = (JSObject)Runtime.GetGlobalObject("document"))
-            using (var button = (JSObject)document.Invoke("getElementById", id))
+            if (!OnClickEvents.ContainsKey(id))
             {
+                var button = (JSObject)((JSObject)Runtime.GetGlobalObject("document")).Invoke("getElementById", id);
                 button.SetObjectProperty("onclick", onClickAction);
+                OnClickEvents[id] = onClickAction;
             }
         }
     }
